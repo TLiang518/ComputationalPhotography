@@ -41,6 +41,11 @@ int main() {
 
     cout << "blurred impulse image" << endl;
     cout << "keep testing..." << endl;
+
+    Image lounge_view("./Input/lounge_view.png");
+
+    Image sobel = gradientMagnitude(lounge_view, true);
+    sobel.write("./Output/sobel.png");
     */
     // ---------------------------------------------------
 
@@ -48,12 +53,6 @@ int main() {
     // ---------------------------------------------------
     // Test the filter class on an impulse image
     Image dirac = impulseImg(31);
-    
-
-    Image lounge_view("./Input/lounge_view.png");
-
-    Image sobel = gradientMagnitude(lounge_view, true);
-    sobel.write("./Output/sobel.png");
 
     // Test kernel
     vector<float> kernel{0,0,1,
@@ -95,7 +94,7 @@ int main() {
     // ---------------------------------------------------
     float sigma = 2.0f;
     
-    Image sharpened_image = unsharpMask(im2, sigma);
+    Image sharpened_image = unsharpMask(im2, sigma, 3.0, 1, true);
     sharpened_image.write("./Output/sharpened_image.png");
     
     /*

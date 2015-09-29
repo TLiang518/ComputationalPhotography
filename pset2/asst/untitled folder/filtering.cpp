@@ -62,9 +62,9 @@ Image Filter::convolve(const Image &im, bool clamp){
         for (int j = 0; j < im.height(); j++){
             for (int c = 0; c < im.channels(); c++){                
                 float conv_value = 0; 
-                for (int kernel_a = -width/2; kernel_a <= width/2; kernel_a++){
-                    for (int kernel_b = -height/2; kernel_b <= height/2; kernel_b++){
-                        conv_value += im.smartAccessor(i + kernel_a, j + kernel_b, c, clamp) * operator()(width/2 - kernel_a, height/2 - kernel_b);
+                for (int kernel_a = 0; kernel_a < width; kernel_a++){
+                    for (int kernel_b = 0; kernel_b < height; kernel_b++){
+                        conv_value += im.smartAccessor(i + kernel_a, j + kernel_b, c) * operator()((width - 1) - kernel_a, (height - 1) - kernel_b);
                     }
                 }
                 output_image(i,j,c) = conv_value;
@@ -158,8 +158,8 @@ Image gaussianBlur_vertical(const Image &im, float sigma, float truncate, bool c
     // Gaussian blur across the rows of an image
     vector<float> gaussian_kernel = gauss1DFilterValues(sigma, truncate);
     Filter gaussian_filter(gaussian_kernel, 1, 1+2*ceil(sigma * truncate));
-    Image vertical_gaussian_blur =  gaussian_filter.convolve(im, clamp);
-    return vertical_gaussian_blur;
+    Image horizontal_gaussian_blur =  gaussian_filter.convolve(im, clamp);
+    return horizontal_gaussian_blur;
 }
 
 vector<float> gauss2DFilterValues(float sigma, float truncate){
