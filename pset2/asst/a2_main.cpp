@@ -20,18 +20,13 @@ using namespace std;
 // This is a way for you to test your functions. 
 // We will only grade the contents of filter.cpp and Image.cpp
 int main() {
-    cout << "nothing done in a2_main.cpp, debug me !" << endl;
 
     // ------- Example tests, change them ! --------------
     Image im = impulseImg(10);
     //Go back and check this. I'm not sure what the behavior should be, even.
-    /*
+    
     Image white_square("./Input/white_square.png");
     //300x300
-    cout << "smart accessor at (1,3,0): " << white_square.smartAccessor(1,3,0,true) << endl;
-    cout << "smart accessor at (500,500,0,false)" << white_square.smartAccessor(1000,1000,0,false) << endl;
-    cout << "smart accessor at (500,500,0,true)" << white_square.smartAccessor(1000,1000,0,true) << endl;
-
     Image cambridge1("./Input/Cambridge1.png");
     
     Image blurred = boxBlur(cambridge1, 3, true);
@@ -41,12 +36,13 @@ int main() {
 
     cout << "blurred impulse image" << endl;
     cout << "keep testing..." << endl;
-    */
+    
     // ---------------------------------------------------
 
     
     // ---------------------------------------------------
     // Test the filter class on an impulse image
+    
     Image dirac = impulseImg(31);
     
 
@@ -95,10 +91,11 @@ int main() {
     // ---------------------------------------------------
     float sigma = 2.0f;
     
+    Image lens_img("./Input/lens.png");
+
     Image sharpened_image = unsharpMask(im2, sigma);
     sharpened_image.write("./Output/sharpened_image.png");
-    
-    /*
+        
     Image gaussianBlur_horizontal_img= gaussianBlur_horizontal(im2, sigma, 3.0, true);
     gaussianBlur_horizontal_img.write("./Output/gaussianBlur_horizontal_img.png");
 
@@ -114,6 +111,12 @@ int main() {
     double duration = (end-start)*1.0f/CLOCKS_PER_SEC;
     cout << "2D gaussian took: " << duration <<"s" << endl;
     // ---------------------------------------------------
-    */
+    
+    
+    Image bilaterial_img = bilateral(lens_img);
+    bilaterial_img.write("./Output/bilaterial_img.png");
+    
+    Image bilateral_yuv_img = bilaYUV(lens_img);
+    bilateral_yuv_img.write("./Output/bilateral_yuv_img.png");
 }
 

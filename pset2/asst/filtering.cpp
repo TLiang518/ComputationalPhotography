@@ -216,7 +216,43 @@ Image unsharpMask(const Image &im, float sigma, float truncate, float strength, 
 Image bilateral(const Image &im, float sigmaRange, float sigmaDomain, float truncateDomain, bool clamp){
     // --------- HANDOUT  PS02 ------------------------------
     // Denoise an image using the bilateral filter
-    return im;
+    Image output_image = im;
+    float kernel_dimenions = 2*sigmaDomain * truncateDomain + 1;
+    vector<float> gaussian_2d_domain = gauss2DFilterValues(sigmaDomain, truncateDomain);   
+    Filter gaussian_2d_domain_filter(gaussian_2d_domain, kernel_dimenions, kernel_dimenions);
+
+    float gaussian_range_constant = 1.0/sqrt(2*M_PI*pow(sigmaRange,2));
+    // Read http://people.csail.mit.edu/sparis/publi/2009/fntcgv/Paris_09_Bilateral_filtering.pdf for clarification
+    for (int i = 0; i < im.width(); i++){
+        for (int j = 0; j < im.height(); j++){
+            for (int c = 0; c < im.channels(); c++){
+                float filter_value = 0; 
+                float k_for_i_j = 0;
+                
+                for (int kernel_a = -kernel_dimenions/2; kernel_a <= kernel_dimenions/2; kernel_a++){
+                    for (int kernel_b = -kernel_dimenions/2; kernel_b <= kernel_dimenions/2; kernel_b++){
+                        
+                        float spacial_weight = gaussian_2d_domain_filter(kernel_dimenions/2 - kernel_a, kernel_dimenions/2 - kernel_b);
+                        
+                        float x = im.smartAccessor(i,j,c);
+                        float x_prime = im.smartAccessor(i + kernel_a, j + kernel_b, c, clamp);
+                        float range_weight = gaussian_range_constant*exp(-1*pow((x - x_prime),2)/(2*pow(sigmaRange,2)));
+                        
+                        float intensity_at_examined_point = x_prime;
+
+                        float final_value = spacial_weight*range_weight*intensity_at_examined_point;
+                        filter_value += final_value;
+
+                        k_for_i_j += spacial_weight*range_weight;
+                    
+                    }   
+                }
+                
+                output_image(i,j,c) = filter_value/k_for_i_j;
+            }
+        }
+    }
+    return output_image;
 }
 
 
@@ -225,7 +261,65 @@ Image bilaYUV(const Image &im, float sigmaRange, float sigmaY, float sigmaUV, fl
     // 6.865 only
     // Bilaterial Filter an image seperatly for
     // the Y and UV components of an image
-    return im;
+
+    Image yuv_im = rgb2yuv(im); 
+    Image output_image = yuv_im; 
+
+    float kernel_Y_dimenions = 2*sigmaY*truncateDomain + 1;
+    vector<float> gaussian_2d_domain_Y = gauss2DFilterValues(sigmaY, truncateDomain);   
+    Filter gaussian_2d_domain_filter_Y(gaussian_2d_domain_Y, kernel_Y_dimenions, kernel_Y_dimenions);
+
+    float kernel_UV_dimenions = 2*sigmaUV*truncateDomain + 1;
+    vector<float> gaussian_2d_domain_UV = gauss2DFilterValues(sigmaUV, truncateDomain);   
+    Filter gaussian_2d_domain_filter_UV(gaussian_2d_domain_UV, kernel_UV_dimenions, kernel_UV_dimenions);
+
+    float gaussian_range_constant = 1.0/sqrt(2*M_PI*pow(sigmaRange,2));
+    // Read http://people.csail.mit.edu/sparis/publi/2009/fntcgv/Paris_09_Bilateral_filtering.pdf for clarification
+    for (int i = 0; i < yuv_im.width(); i++){
+        for (int j = 0; j < yuv_im.height(); j++){
+            for (int c = 0; c < yuv_im.channels(); c++){
+                float filter_value = 0; 
+                float k_for_i_j = 0;
+                
+                float kernel_dimenions;
+                Filter gaussian_2d_domain_filter = gaussian_2d_domain_filter_Y;
+                if (c == 0){
+                    kernel_dimenions = kernel_Y_dimenions;
+                    gaussian_2d_domain_filter = gaussian_2d_domain_filter_Y;
+                }
+                else{
+                    kernel_dimenions = kernel_UV_dimenions;
+                    gaussian_2d_domain_filter = gaussian_2d_domain_filter_UV;                    
+                }
+
+                for (int kernel_a = -kernel_dimenions/2; kernel_a <= kernel_dimenions/2; kernel_a++){
+                    for (int kernel_b = -kernel_dimenions/2; kernel_b <= kernel_dimenions/2; kernel_b++){
+
+                        float spacial_weight = gaussian_2d_domain_filter(kernel_dimenions/2 - kernel_a, kernel_dimenions/2 - kernel_b);
+                        
+                        float x = yuv_im.smartAccessor(i,j,c);
+                        float x_prime = yuv_im.smartAccessor(i + kernel_a, j + kernel_b, c, clamp);
+                        float range_weight = gaussian_range_constant*exp(-1*pow((x - x_prime),2)/(2*pow(sigmaRange,2)));
+                        
+                        float intensity_at_examined_point = x_prime;
+
+                        float final_value = spacial_weight*range_weight*intensity_at_examined_point;
+                        filter_value += final_value;
+
+                        k_for_i_j += spacial_weight*range_weight;
+                    
+                    }   
+                }
+                
+                output_image(i,j,c) = filter_value/k_for_i_j;
+            }
+        }
+    }
+
+    std::cout << "made it to bottom!" << std::endl;
+
+    Image rgb_output_image = yuv2rgb(output_image);
+    return rgb_output_image;
 }
 
 
