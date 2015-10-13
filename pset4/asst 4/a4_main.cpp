@@ -55,17 +55,14 @@ void testMakeHDR() {
     // load an image sequence
     vector<Image> imSeq;
 
-    imSeq.push_back(changeGamma(Image("./Input/ante2-1.png"), 1.0/2.2, 1.0f));
-    imSeq.push_back(changeGamma(Image("./Input/ante2-2.png"), 1.0/2.2, 1.0f));
-    /*
-    imSeq.push_back(Image("./Input/design-1.png"));
-    imSeq.push_back(Image("./Input/design-2.png"));
-    imSeq.push_back(Image("./Input/design-3.png"));
-    imSeq.push_back(Image("./Input/design-4.png"));
-    imSeq.push_back(Image("./Input/design-5.png"));
-    imSeq.push_back(Image("./Input/design-6.png"));
-    imSeq.push_back(Image("./Input/design-7.png"));
-    */
+    imSeq.push_back(changeGamma(Image("./Input/design-1.png"), 1.0/2.2, 1.0f));
+    imSeq.push_back(changeGamma(Image("./Input/design-2.png"), 1.0/2.2, 1.0f));
+    imSeq.push_back(changeGamma(Image("./Input/design-3.png"), 1.0/2.2, 1.0f));
+    imSeq.push_back(changeGamma(Image("./Input/design-4.png"), 1.0/2.2, 1.0f));
+    imSeq.push_back(changeGamma(Image("./Input/design-5.png"), 1.0/2.2, 1.0f));
+    imSeq.push_back(changeGamma(Image("./Input/design-6.png"), 1.0/2.2, 1.0f));
+    imSeq.push_back(changeGamma(Image("./Input/design-7.png"), 1.0/2.2, 1.0f));
+
     // generate an hdr image
     Image hdr = makeHDR(imSeq);
 
@@ -95,14 +92,18 @@ void testToneMapping_ante2() {
     imSeq.push_back(changeGamma(Image("./Input/ante2-2.png"), 1.0/2.2, 1.0f));
     
     // create hdr image
+    std::cout << "In ante2 before makeHDR" << std::endl;
+
     Image hdr = makeHDR(imSeq);
+    std::cout << "In ante2 after makeHDR" << std::endl;
     
+    std::cout << "In tone map with gaussian blur " << std::endl;
     // tone map with gaussian blur
     Image tm = toneMap(hdr, 100, 1, false);
+    std::cout << "After tone map with gaussian blur" << std::endl;
     tm = changeGamma(tm, 1.0, 1.0/2.2);
     tm.write("./Output/ante2-tonedHDRsimple-gauss.png");
 
-    // tone map with bilaterial
     tm = toneMap(hdr, 100, 3, true, 0.1);
     tm = changeGamma(tm, 1.0, 1.0/2.2);
     tm.write("./Output/ante2-tonedHDRsimple-bilateral.png");
@@ -183,14 +184,24 @@ void testToneMapping_design() {
 // This is a way for you to test your functions. 
 // We will only grade the contents of demosaic.cpp and align.cpp
 int main() {
-
-    //testComputeWeight();
-    //testComputeFactor();
+    /*
+    std::cout << "Starting test battery" << std::endl;
+    std::cout << "Before compute weight" << std::endl;
+    testComputeWeight();
+    std::cout << "Before compute factor" << std::endl;
+    testComputeFactor();
+    std::cout << "Before makeHDR" << std::endl;
     testMakeHDR();
-    //testToneMapping_ante2();
-    //testToneMapping_ante3();
-    //testToneMapping_boston();
-    //testToneMapping_design();
-
+    
+    std::cout << "before tone ante2" << std::endl;
+    testToneMapping_ante2();
+    
+    std::cout << "before tone ante3" << std::endl;
+    testToneMapping_ante3();
+    std::cout << "before tone boston" << std::endl;
+    testToneMapping_boston();
+    */
+    testToneMapping_design();
+    
     return 0;
 }

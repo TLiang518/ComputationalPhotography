@@ -138,30 +138,36 @@ Image toneMap(const Image &im, float targetBase, float detailAmp, bool useBila, 
     // - Split the image into its luminance-chrominance components.
     // - Work in the log10 domain for the luminance
     // - 
-    Image hdr_image = im;
-    vector<Image> lumi_chromi_vect = lumiChromi(hdr_image);
-    Image log10_lumi = log10Image(lumi_chromi_vect[0]);
 
-    float truncateDomain = 3;
-    float standardDev = max(im.width(), im.height())/50.0;
-    Image blurred_lumi = log10_lumi;
+    vector<Image> lumi_chromi_vect = lumiChromi(im);
+    Image log10_lumi = log10Image(lumi_chromi_vect[0]);
+    float sigma = max(im.width(), im.height())/50.0;
+    Image blurred_log_lumi = log10_lumi;
     if (useBila){
         //perform bilateral blurring on the image
         //Image bilateral(const Image &im, float sigmaRange, float sigmaDomain, float truncateDomain, bool clamp)
-        blurred_lumi = bilateral(log10_lumi, sigmaRange, standardDev, truncateDomain);
+        blurred_log_lumi = bilateral(log10_lumi, sigmaRange, sigma, 3.0);
     }
     else {
         //perform gaussian blurring on the image
         //Image gaussianBlur_separable(const Image &im, float sigma, float truncate, bool clamp){
-        blurred_lumi = gaussianBlur_separable(log10_lumi, sigmaRange, truncateDomain);
+        std::cout << "In tone map before separable gaussian blur" << std::endl;
+        blurred_log_lumi = gaussianBlur_separable(log10_lumi, sigma, 3.0);
     }
-    Image inLogLarge = blurred_lumi;
-    Image inLogDetail = log10_lumi - targetBase;
-    float largeRange = float(blurred_lumi.max() - blurred_lumi.min());
-    float k = log10(100)/largeRange;
-    Image outLog = detailAmp*inLogDetail + k*(inLogLarge - inLogLarge.max());
-    Image outputLumi = exp10Image(outLog);
-    Image output = lumiChromi2rgb(vector<Image>{outputLumi,lumi_chromi_vect[1]});
+    std::cout << "In tone map after separable gaussian blur" << std::endl;
+    
+    float k = log10(targetBase)/(blurred_log_lumi.max() - blurred_log_lumi.min());
+    Image log_targetBaseImage = k*blurred_log_lumi;
+    float log_targetBaseMax = log_targetBaseImage.max();
+    float targetBaseMax = pow(10, log_targetBaseMax);
+    log_targetBaseImage = log_targetBaseImage - log_targetBaseImage.max();
+
+    Image inLogDetail = log10_lumi - blurred_log_lumi;
+    Image log_ampedDetails = detailAmp*inLogDetail;
+
+    Image outlog = log_targetBaseImage + log_ampedDetails;
+    Image lumi_output_not_normalized = exp10Image(outlog);
+    Image output = lumiChromi2rgb(vector<Image>{lumi_output_not_normalized, lumi_chromi_vect[1]});
     return output;
 }
 
@@ -181,17 +187,13 @@ Image log10Image(const Image &im) {
     // non-zero value. See image_minnonzero(im).
     float image_non_zero_min = image_minnonzero(im);
     Image logImage = im;
-    for (int a = 0; a < im.width(); a++){
-        for (int b = 0; b < im.height(); b++){
-            for (int c = 0; c < im.channels(); c++){
-                if (im(a,b,c) == 0.0){
-                    logImage(a,b,c) = log10(image_non_zero_min);
-                }
-                else {
-                    logImage(a,b,c) = log10(im(a,b,c));                    
-                }
-            }
+    for (int i = 0; i < im.number_of_elements(); i++){
+        if (im(i) == 0.0){
+            logImage(i) = log10(image_non_zero_min);
         }
+        else {
+            logImage(i) = log10(im(i));                    
+        }        
     }
     return logImage;
 }
@@ -202,12 +204,8 @@ Image exp10Image(const Image &im) {
     // take an image in log10 domain and transform it back to linear domain.
     // see pow(a, b)
     Image expImage = im;
-    for (int a = 0; a < im.width(); a++){
-        for (int b = 0; b < im.height(); b++){
-            for (int c = 0; c < im.channels(); c++){
-                expImage(a,b,c) = pow(im(a,b,c), 2);
-            }
-        }
+    for (int i = 0; i < im.number_of_elements(); i++){
+        expImage(i) = pow(10.0, im(i));
     }
     return expImage;
 }
@@ -218,13 +216,9 @@ float image_minnonzero(const Image &im) {
     // return the smallest value in the image that is non-zeros (across all
     // channels too)
     float min = FLT_MAX;
-    for (int a = 0; a < im.width(); a++){
-        for (int b = 0; b < im.height(); b++){
-            for (int c = 0; c < im.channels(); c++){
-                if (im(a,b,c) < min) {
-                    min = im(a,b,c);
-                }
-            }
+    for (int i = 0; i < im.number_of_elements(); i++){
+        if (im(i) < min) {
+            min = im(i);
         }
     }
     return min;
