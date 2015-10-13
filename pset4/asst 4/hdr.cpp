@@ -72,11 +72,6 @@ Image makeHDR(vector<Image> &imSeq, float epsilonMini, float epsilonMaxi){
     // Compute the exposure factor for each consecutive pair of image.
     // Write the valid pixel to your hdr output, taking care of rescaling them
     // properly using the factor.
-    vector<Image> gammaRemoved;
-
-    for (auto & im: imSeq){
-        gammaRemoved.push_back(changeGamma(im, 1.0/2.2, 1.0f));
-    }
 
     vector<Image> weightSeq;
     for (int i = 0; i < imSeq.size(); i++){
@@ -88,7 +83,7 @@ Image makeHDR(vector<Image> &imSeq, float epsilonMini, float epsilonMaxi){
         if (i == 0){
             maxi = FLT_MAX;
         }
-        weightSeq.push_back(computeWeight(gammaRemoved[i], mini, maxi));
+        weightSeq.push_back(computeWeight(imSeq[i], mini, maxi));
     }
 
     vector<float> weight_factors_individual;
@@ -96,7 +91,7 @@ Image makeHDR(vector<Image> &imSeq, float epsilonMini, float epsilonMaxi){
     float cumulative_factor = 1.0;
     weight_factors_cumulative.push_back(cumulative_factor);
     for (int a = 0; a < weightSeq.size() - 1; a++){    
-        float factor = computeFactor(gammaRemoved[a], weightSeq[a], gammaRemoved[a+1], weightSeq[a+1]);
+        float factor = computeFactor(imSeq[a], weightSeq[a], imSeq[a+1], weightSeq[a+1]);
         weight_factors_individual.push_back(factor);
         
         cumulative_factor *= factor;
@@ -104,22 +99,26 @@ Image makeHDR(vector<Image> &imSeq, float epsilonMini, float epsilonMaxi){
     }
     
     Image darkest = imSeq[0];
-    Image output(gammaRemoved[0].width(), gammaRemoved[0].height(), gammaRemoved[0].channels());
+    Image output(imSeq[0].width(), imSeq[0].height(), imSeq[0].channels());
     for (int a = 0; a < darkest.width(); a++){
         for (int b = 0; b < darkest.height(); b++){
             for (int c = 0; c < darkest.channels(); c++){
                 float pixel_value_sum = 0;
                 float valid_counter = 0;
-                for (int i = 0; i < gammaRemoved.size(); i++){
+                for (int i = 0; i < imSeq.size(); i++){
                     float pixel_weight = weightSeq[i](a,b,c);
-                    float pixel_value = gammaRemoved[i](a,b,c);
+                    float pixel_value = imSeq[i](a,b,c);
                     if (pixel_weight > 0){
                         pixel_value_sum += pixel_value/weight_factors_cumulative[i];
                         valid_counter++;
                     }
                 }
-                float avg = pixel_value_sum/valid_counter;
-                output(a,b,c) = avg;
+                if (valid_counter == 0){
+                    output(a,b,c) = darkest(a,b,c);
+                }
+                else {
+                    output(a,b,c) = pixel_value_sum/valid_counter;
+                }
             }
         }
     }
@@ -245,4 +244,3 @@ Image changeGamma(const Image & im, float old_gamma, float new_gamma) {
     }
     return output;
 }
-

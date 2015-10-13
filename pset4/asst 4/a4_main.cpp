@@ -54,6 +54,10 @@ void testComputeFactor() {
 void testMakeHDR() {
     // load an image sequence
     vector<Image> imSeq;
+
+    imSeq.push_back(changeGamma(Image("./Input/ante2-1.png"), 1.0/2.2, 1.0f));
+    imSeq.push_back(changeGamma(Image("./Input/ante2-2.png"), 1.0/2.2, 1.0f));
+    /*
     imSeq.push_back(Image("./Input/design-1.png"));
     imSeq.push_back(Image("./Input/design-2.png"));
     imSeq.push_back(Image("./Input/design-3.png"));
@@ -61,7 +65,7 @@ void testMakeHDR() {
     imSeq.push_back(Image("./Input/design-5.png"));
     imSeq.push_back(Image("./Input/design-6.png"));
     imSeq.push_back(Image("./Input/design-7.png"));
-
+    */
     // generate an hdr image
     Image hdr = makeHDR(imSeq);
 
@@ -190,4 +194,3 @@ int main() {
 
     return 0;
 }
-
