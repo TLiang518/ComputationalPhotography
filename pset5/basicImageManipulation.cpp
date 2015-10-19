@@ -38,6 +38,15 @@ Image scaleNN(const Image &im, float factor){
     return output;
 }
 
+/*
+Nearest-neighbor re-sampling creates blocky artifacts and pixelated results. 
+We will address this using a better reconstruction based on bilinear interpolation. 
+For this, we consider the four pixels immediately around the computed real coordinates
+ and perform two linear interpolations. We first linearly interpolate along x the colors
+  of the top and bottom pairs of pixels. Then we interpolate these two values along y to 
+  get the final sample. The interpolation weight are driven by the distance from the corners.
+*/
+
 float interpolateLin(const Image &im, float x, float y, int z, bool clamp){
     // --------- HANDOUT  PS03 ------------------------------
     // bilinear interpolation samples the value of a non-integral
@@ -53,7 +62,39 @@ float interpolateLin(const Image &im, float x, float y, int z, bool clamp){
     //  |           |    We are willing to share some color 
     //                   information with * ! Of course, the pixel
     //                   closest to * should influence it more.
-    return 0.0f;
+    
+    /*
+
+    • Take 4 nearest neighbors
+    • Weight according to x & y fractional
+    coordinates
+    • Can be done using two 1D linear
+    reconstructions along x then y (or y then x)
+    
+    */
+    std::cout << "Checking interpolate lin " << std::endl;
+    int lower_x = floor(x);
+    float lower_x_weight = abs(x - lower_x);
+    int upper_x = ceil(x);
+    float upper_x_weight = 1 - abs(x - upper_x);
+    int lower_y = floor(y);
+    float lower_y_weight = abs(y - lower_y);
+    int upper_y = ceil(y);
+    float upper_y_weight = 1 - abs(y - upper_y);
+
+    cout << " lower_x " << lower_x << " upper_x " << upper_x << " lower_y " << lower_y << " upper_y " << upper_y << std::endl;
+    cout << " lower_x_weight " << lower_x_weight << " upper_x_weight " << upper_x_weight << " lower_y_weight " << lower_y_weight << " upper_y_weight " << upper_y_weight << std::endl;
+
+
+    float top_x_value = im(lower_x, upper_y, z)*lower_x_weight + im(upper_x, upper_y,z)*upper_x_weight;
+    
+    float bottom_x_value = im(lower_x, lower_y,z)*lower_x_weight + im(upper_x, lower_y,z)*upper_x_weight;
+
+    cout << "top_x_value " << top_x_value << " bottom_x_value " << bottom_x_value << endl;
+
+    float interpolated_y_value = top_x_value*upper_y_weight + bottom_x_value*lower_y_weight;
+
+    return interpolated_y_value;
 }
 
 Image scaleLin(const Image &im, float factor){

@@ -170,8 +170,8 @@ void testMorph() {
 // We will only grade the contents of morphing.cpp and basicImageManipulation.cpp
 int main() {
     cout << "nothing done in a5_main.cpp, debug me !" << endl;
-    testNearestNeighbor();
-    // testBilinearInterpolation();
+    // testNearestNeighbor();
+    testBilinearInterpolation();
     // testBilinearRescaling();
     // testRotation();
     // testVectorOperations();
