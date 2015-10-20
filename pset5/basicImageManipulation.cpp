@@ -118,7 +118,7 @@ Image scaleLin(const Image &im, float factor){
     }
     return output;
 }
-
+    
 
 Image rotate(const Image &im, float theta) {
     // --------- HANDOUT  PS03 ------------------------------
@@ -126,11 +126,50 @@ Image rotate(const Image &im, float theta) {
     // rotate an image around its center by theta
 
 	// center around which to rotate
-    float centerX = (im.width()-1.0)/2.0;
-    float centerY = (im.height()-1.0)/2.0;
-
-
+    float centerX = (im.width() - 1.0)/2.0;
+    float centerY = (im.height() - 1.0)/2.0;
     
+    Image rotated(im.width(), im.height(), im.channels());
+
+    for (int a = 0; a < rotated.width(); a++){
+        for (int b = 0; b < rotated.height(); b++){
+            
+            float rotated_x = a - centerX;
+            float rotated_y = b - centerY;
+            float hyp = sqrt(pow(rotated_x, 2.0) + pow(rotated_y, 2.0));
+            
+            float rotated_theta;
+            if (rotated_y == 0) {
+                rotated_theta = (rotated_x > 0) ? 0 : M_PI;
+            }
+            else if (rotated_x == 0){
+                rotated_theta = (rotated_y > 0) ? M_PI/2 : 3*M_PI/2;
+            }
+            else {
+                //goes from -pi/2 to pi/2 so...
+                rotated_theta = atan(rotated_y/rotated_x);
+                if (rotated_x > 0) {
+                    rotated_theta = rotated_theta;
+                }
+                else if (rotated_x < 0){
+                    rotated_theta = M_PI + rotated_theta;
+                }
+                else {
+                    cout << "HELP IN WRONG STATEMENT" << endl;
+                }
+            }
+
+            float orig_theta = theta + rotated_theta;
+            float orig_a = cos(orig_theta)*hyp + centerX;
+            float orig_b = sin(orig_theta)*hyp + centerY;
+            
+            for (int c = 0; c < im.channels(); c++){
+                rotated(a,b,c) = interpolateLin(im, orig_a, orig_b, c);
+            }
+        }
+    }
+
+    return rotated;
 }
 
 // -----------------------------------------------------

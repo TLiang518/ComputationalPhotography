@@ -68,6 +68,36 @@ void testBilinearRescaling() {
     scaled.write("./Output/testLin.png");
 }
 
+void testRotateSegment(){
+    int centerX = 0;
+    int centerY = 0;
+
+    float a = 45;
+    float b = 45;
+
+    float hyp = sqrt(pow(a - centerX, 2.0) + pow(b - centerY, 2.0));
+
+    float theta = M_PI/8;
+    
+    float rotated_theta;
+    if (a == 0) {
+        rotated_theta = copysign(M_PI/2,b);
+    }
+    else if (b == 0){
+        rotated_theta = (a > 0) ? 0 : -1*M_PI;
+    }
+    else {
+        rotated_theta = atan(b/a);
+    }
+
+    std::cout << "rotated_theta " << rotated_theta << endl;
+    
+    float orig_a = cos(rotated_theta - theta)*hyp + centerX;
+    float orig_b = sin(rotated_theta - theta)*hyp + centerY;
+
+    std::cout << " orig_a " << orig_a << " orig_b " << orig_b <<  " corresponding atan: " << atan(orig_b/orig_a) << endl;
+}
+
 void testRotation() {
     const Image im("./Input/BostonRainbow-crop-400.png");
 
@@ -169,11 +199,11 @@ void testMorph() {
 // This is a way for you to test your functions. 
 // We will only grade the contents of morphing.cpp and basicImageManipulation.cpp
 int main() {
-    cout << "nothing done in a5_main.cpp, debug me !" << endl;
     // testNearestNeighbor();
     // testBilinearInterpolation();
-    testBilinearRescaling();
-    // testRotation();
+    // testBilinearRescaling();
+    testRotation();
+    // testRotateSegment();
     // testVectorOperations();
     // testSegment();
     // testWarpBy1();
