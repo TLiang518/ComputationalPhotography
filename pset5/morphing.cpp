@@ -18,7 +18,7 @@ using namespace std;
 Vec2f add(const Vec2f & a, const Vec2f & b) {
     // --------- HANDOUT  PS03 ------------------------------
     // Return the vector sum of a an b
-    return Vec2f(0.0f,0.0f); // change me
+    return Vec2f(a.x + b.x, a.y + b.y);
     
 }
 
@@ -26,27 +26,31 @@ Vec2f add(const Vec2f & a, const Vec2f & b) {
 Vec2f subtract(const Vec2f & a, const Vec2f & b) {
     // --------- HANDOUT  PS03 ------------------------------
     // Return a-b
-    return Vec2f(0.0f,0.0f); // change me
+    return Vec2f(a.x - b.x, a.y - b.y);
 }
 
 
 Vec2f scalarMult(const Vec2f & a, float f) {
     // --------- HANDOUT  PS03 ------------------------------
     // Return a*f
-    return Vec2f(0.0f,0.0f); // change me
+    return Vec2f(f*a.x,f*a.y);
 }
 
 
 float dot(const Vec2f & a, const Vec2f & b) {
     // --------- HANDOUT  PS03 ------------------------------
     // Return the dot product of a and b.
-    return 0.0f; // change me
+    return a.x*b.x + a.y*b.y;
 }
 
 float length(const Vec2f & a) {
     // --------- HANDOUT  PS03 ------------------------------
     // Return the length of a.
-    return 0.0f; // change me
+    return sqrt(pow(a.x,2) + pow(a.y,2)); 
+}
+
+Vec2f perpendicular(const Vec2f & a){
+    return Vec2f(a.y, -a.x);
 }
 
 
@@ -58,6 +62,12 @@ Segment::Segment(Vec2f P_, Vec2f Q_) : P(P_), Q(Q_) {
     // // and Q_, so you don't have to do it in the body of the constructor.
     // You should:
     // * Initialize the local frame e1,e2 (see header file)
+    Vec2f subtracted_vec = subtract(Q, P);
+    e1 = Vec2f(subtracted_vec.x/length(subtracted_vec), subtracted_vec.y/length(subtracted_vec));
+    //http://gamedev.stackexchange.com/questions/70075/how-can-i-find-the-perpendicular-to-a-2d-vector
+    Vec2f e2_intermediate = perpendicular(e1);
+    e2 = Vec2f(e2_intermediate.x/length(e2_intermediate), e2_intermediate.y/length(e2_intermediate));
+    lPQ = length(subtracted_vec);
 }
 
 
@@ -75,7 +85,18 @@ Vec2f Segment::XtoUV(Vec2f X) const {
     //                    u=1
     //
     // * Be careful with the different normalization for u and v
-    return Vec2f(0.0f, 0.0f); // changeme
+    
+    /*
+    Now that our Segment class is usable let’s implement methods to
+    convert from the global (x,y) coordinates of a point to the local (u,v)
+    coordinates in the reference frame as in Beier and Neely. Be careful:
+    although v exactly corresponds to the second coordinate in the local frame,
+    u is actually rescaled so that the u coordinate of Q is 1 
+    (Equations (1) and (2) in the paper).
+    */
+    float u = dot(subtract(X,P), subtract(Q, P))/pow(length(subtract(Q, P)),2);
+    float v = dot(subtract(X,P), perpendicular(subtract(Q, P)))/length(subtract(Q, P));
+    return Vec2f(u,v); 
 }
 
 
@@ -84,7 +105,13 @@ Vec2f Segment::UVtoX(Vec2f uv) const {
     // compute the (x, y) position of a point given by the (u,v)
     // location relative to this segment.
     // * Be careful with the different normalization for u and v
-    return Vec2f(0.0f, 0.0f);
+    float u = uv.x;
+    float v = uv.y;
+
+    float X_x =  u * pow(lPQ,2)/(Q.x - P.x) + P.x;
+    float X_y = v * pow(lPQ,2)/(Q.y - P.y) + P.y;
+
+    return Vec2f(X_x, X_y);
 }
 
 
@@ -92,7 +119,10 @@ float Segment::distance(Vec2f X) const {
     // // --------- HANDOUT  PS03 ------------------------------
     // // Implement distance from a point X(x,y) to the segment. Remember the 3
     // // cases from class.
-    return 0.0f;
+
+    //Three cases -- one, the length of the perpendicular line segment will be the optimal distance
+    // U is the vector perpendicular to P
+    // Second and third cases -- the endpoints of the line segments are idea
 
 }
 

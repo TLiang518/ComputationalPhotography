@@ -101,7 +101,7 @@ void testRotateSegment(){
 void testRotation() {
     const Image im("./Input/BostonRainbow-crop-400.png");
 
-    float theta = M_PI/8;
+    float theta = M_PI/4;
     
     Image rot = rotate(im, theta);
     rot.write("./Output/testRotate.png");
@@ -202,10 +202,10 @@ int main() {
     // testNearestNeighbor();
     // testBilinearInterpolation();
     // testBilinearRescaling();
-    testRotation();
+    // testRotation();
     // testRotateSegment();
     // testVectorOperations();
-    // testSegment();
+    testSegment();
     // testWarpBy1();
     // testWarp();
     // testMorph();
