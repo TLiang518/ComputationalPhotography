@@ -171,8 +171,8 @@ void testMorph() {
 int main() {
     cout << "nothing done in a5_main.cpp, debug me !" << endl;
     // testNearestNeighbor();
-    testBilinearInterpolation();
-    // testBilinearRescaling();
+    // testBilinearInterpolation();
+    testBilinearRescaling();
     // testRotation();
     // testVectorOperations();
     // testSegment();

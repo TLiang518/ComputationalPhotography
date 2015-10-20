@@ -72,25 +72,29 @@ float interpolateLin(const Image &im, float x, float y, int z, bool clamp){
     reconstructions along x then y (or y then x)
     
     */
-    std::cout << "Checking interpolate lin " << std::endl;
+
+    /*
+    cout << "------------\n";
+    */ 
     int lower_x = floor(x);
-    float lower_x_weight = abs(x - lower_x);
+    float upper_x_weight = abs(x - lower_x);
     int upper_x = ceil(x);
-    float upper_x_weight = 1 - abs(x - upper_x);
+    float  lower_x_weight = 1 - upper_x_weight;
+    /*
+    cout << "lower x weight: " << lower_x_weight << "\n";
+    cout << "upper x weight: " << upper_x_weight << "\n";
+    */
     int lower_y = floor(y);
-    float lower_y_weight = abs(y - lower_y);
+    float upper_y_weight = abs(y - lower_y);
     int upper_y = ceil(y);
-    float upper_y_weight = 1 - abs(y - upper_y);
-
-    cout << " lower_x " << lower_x << " upper_x " << upper_x << " lower_y " << lower_y << " upper_y " << upper_y << std::endl;
-    cout << " lower_x_weight " << lower_x_weight << " upper_x_weight " << upper_x_weight << " lower_y_weight " << lower_y_weight << " upper_y_weight " << upper_y_weight << std::endl;
-
-
-    float top_x_value = im(lower_x, upper_y, z)*lower_x_weight + im(upper_x, upper_y,z)*upper_x_weight;
+    float lower_y_weight = 1 - upper_y_weight;
+    /*
+    cout << "lower_y_weight: " << lower_y_weight << "\n";
+    cout << "upper_y_weight: " << upper_y_weight << "\n";
+    */
+    float top_x_value = im.smartAccessor(lower_x, upper_y,z)*lower_x_weight + im.smartAccessor(upper_x, upper_y,z)*upper_x_weight;
     
-    float bottom_x_value = im(lower_x, lower_y,z)*lower_x_weight + im(upper_x, lower_y,z)*upper_x_weight;
-
-    cout << "top_x_value " << top_x_value << " bottom_x_value " << bottom_x_value << endl;
+    float bottom_x_value = im.smartAccessor(lower_x, lower_y,z)*lower_x_weight + im.smartAccessor(upper_x, lower_y,z)*upper_x_weight;
 
     float interpolated_y_value = top_x_value*upper_y_weight + bottom_x_value*lower_y_weight;
 
@@ -101,7 +105,18 @@ Image scaleLin(const Image &im, float factor){
     // --------- HANDOUT  PS03 ------------------------------
     // create a new image that is factor times bigger than the input by using
     // bilinear interpolation
-    return im;
+
+    int new_width = im.width()*factor;
+    int new_height = im.height()*factor;
+    Image output(new_width, new_height, im.channels());
+    for (int a = 0; a < new_width; a++){
+        for (int b = 0; b < new_height; b++){
+            for (int c = 0; c < im.channels(); c++){
+                output(a,b,c) = interpolateLin(im, float(a)/factor, float(b)/factor, c);
+            }
+        }
+    }
+    return output;
 }
 
 
@@ -114,7 +129,7 @@ Image rotate(const Image &im, float theta) {
     float centerX = (im.width()-1.0)/2.0;
     float centerY = (im.height()-1.0)/2.0;
 
-    return im; // changeme
+
     
 }
 
