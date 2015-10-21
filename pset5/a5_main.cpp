@@ -205,9 +205,8 @@ int main() {
     // testRotation();
     // testRotateSegment();
     // testVectorOperations();
-    testSegment();
-    // testWarpBy1();
+    // testSegment();
+    testWarpBy1();
     // testWarp();
     // testMorph();
 }
-

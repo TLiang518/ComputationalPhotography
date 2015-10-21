@@ -92,9 +92,9 @@ float interpolateLin(const Image &im, float x, float y, int z, bool clamp){
     cout << "lower_y_weight: " << lower_y_weight << "\n";
     cout << "upper_y_weight: " << upper_y_weight << "\n";
     */
-    float top_x_value = im.smartAccessor(lower_x, upper_y,z)*lower_x_weight + im.smartAccessor(upper_x, upper_y,z)*upper_x_weight;
+    float top_x_value = im.smartAccessor(lower_x, upper_y,z, clamp)*lower_x_weight + im.smartAccessor(upper_x, upper_y,z, clamp)*upper_x_weight;
     
-    float bottom_x_value = im.smartAccessor(lower_x, lower_y,z)*lower_x_weight + im.smartAccessor(upper_x, lower_y,z)*upper_x_weight;
+    float bottom_x_value = im.smartAccessor(lower_x, lower_y,z,clamp)*lower_x_weight + im.smartAccessor(upper_x, lower_y,z, clamp)*upper_x_weight;
 
     float interpolated_y_value = top_x_value*upper_y_weight + bottom_x_value*lower_y_weight;
 
