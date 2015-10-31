@@ -32,9 +32,9 @@ Image computeTensor(const Image &im, float sigmaG, float factorSigma) {
         }
     }
 
-    Image M = gaussianBlur_separable(perPixelContributions, sigmaG*factorSigma);
+    Image structure_tensor = gaussianBlur_separable(perPixelContributions, sigmaG*factorSigma);
 
-    return M;
+    return structure_tensor;
 }
 
 Image cornerResponse(const Image &im, float k, float sigmaG, 
@@ -43,7 +43,24 @@ Image cornerResponse(const Image &im, float k, float sigmaG,
     // // --------- HANDOUT  PS07 ------------------------------
     // Compute response = det(M) - k*[(trace(M)^2)] at every pixel location,
     // using the structure tensor of im.
-    return Image(1,1,1);
+    Image structure_tensor = computeTensor(im, sigmaG, factorSigma);
+    Image corner_response(im.width(), im.height(), 1); 
+
+    for (int i = 0; i < structure_tensor.width(); i++){
+        for (int j = 0; j < structure_tensor.height(); j++){
+            Matrix M = Matrix::Zero(2,2);
+            M(0,0) = structure_tensor(i,j,0);
+            M(0,1) = structure_tensor(i,j,1);
+            M(1,0) = structure_tensor(i,j,1);
+            M(1,1) = structure_tensor(i,j,2);
+            float R = M.determinant() - k*pow(M.trace(), 2);
+            if (R > 0) {
+                corner_response(i, j) = R;
+            }
+        }
+    }
+
+    return corner_response;
 }
 
 
@@ -53,14 +70,58 @@ vector<Point> HarrisCorners(const Image &im, float k, float sigmaG,
     // // --------- HANDOUT  PS07 ------------------------------
     // Compute Harris Corners by maximum filtering the cornerResponse map.
     // The corners are the local maxima.
-    return vector<Point>();
+    vector<Point> harris_corners;
+    Image corner_response = cornerResponse(im, k, sigmaG, factorSigma);
+    corner_response.write("./Output/harris_corners_corner_response.png");
+    Image maximum_corner_response = maximum_filter(corner_response, maxiDiam);
+    maximum_corner_response.write("./Output/maximum_corner_response.png");
+    //exclude boundary corners
+    for (int i = boundarySize; i < (corner_response.width() - boundarySize); i++){
+        for (int j = boundarySize; j < (corner_response.height() - boundarySize); j++){
+            if (maximum_corner_response(i,j) > 0 && corner_response(i,j) == maximum_corner_response(i,j)) {
+                harris_corners.push_back(Point(i,j));
+            }
+        }
+    }
+    return harris_corners;
 }
 
 
 Image descriptor(const Image &blurredIm, Point p, float radiusDescriptor) {
     // // --------- HANDOUT  PS07 ------------------------------
     // Extract a descriptor from blurredIm around point p, with a radius 'radiusDescriptor'.
-    return Image(1,1,1);
+
+    Image output(radiusDescriptor*2+1, radiusDescriptor*2+1, 1);
+    cout << "output width and height: (" << output.width() << " , " << output.height() << ")" << endl;  
+    for (int i = p.x - radiusDescriptor; i < p.x + radiusDescriptor + 1; i++){
+        for (int j = p.y - radiusDescriptor; j < p.y + radiusDescriptor + 1; j++){
+            cout << "output index: (" << i - (p.x - radiusDescriptor) << " , "<< j - (p.y - radiusDescriptor) << ")" << endl;
+            output(i - (p.x - radiusDescriptor), j - (p.y - radiusDescriptor)) = blurredIm(i, j);
+        }
+    }
+
+    cout << "HELLO AGAIN" << endl;
+
+    //subtracting the mean
+    Image subtracted_output = output;
+    for (int i = 0; i < output.width(); i++){
+        for (int j = 0; j < output.height(); j++){
+            subtracted_output(i,j) = output(i, j) - output.mean();
+        }
+    }
+
+    cout << "THIS IS" << endl;
+
+    Image final_output = subtracted_output;
+    for (int i = 0; i < subtracted_output.width(); i++){
+        for (int j = 0; j < subtracted_output.height(); j++){
+            final_output(i,j) = subtracted_output(i,j)/pow(subtracted_output.var(), 0.5);
+        }
+    }
+
+    cout << "DOGE SPEAKING" << endl;
+
+    return final_output;
 }
 
 
@@ -68,7 +129,23 @@ vector <Feature> computeFeatures(const Image &im, vector<Point> cornersL,
     float sigmaBlurDescriptor, float radiusDescriptor) {
     // // --------- HANDOUT  PS07 ------------------------------
     // Pset07. obtain corner features from a list of corner points
-    return vector<Feature>();
+    
+    vector <Feature> features;
+
+    vector<Image> lumi_chromi = lumiChromi(im);
+    Image lumi = lumi_chromi[0];
+    //Using a Gaussian with standard deviation sigmaG, blur the luminance
+    //to control the scale at which corners are extracted. A little bit
+    //of blur helps smooth things out and help extract stable mid-scale corners.
+    Image blurred_lumi = gaussianBlur_separable(lumi, sigmaBlurDescriptor);
+
+    for (Point point : cornersL){
+        Image descriptor_for_point = descriptor(blurred_lumi, point, radiusDescriptor);
+        Feature new_feature(point, descriptor_for_point);
+        features.push_back(new_feature);
+    }
+
+    return features;
 }
 
 

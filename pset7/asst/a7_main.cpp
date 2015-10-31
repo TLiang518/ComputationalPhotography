@@ -75,9 +75,15 @@ void testHarrisCorners() {
 void testDescriptor() {
     Image stata1("./Input/stata-1.png");
     vector<Image> lc = lumiChromi(stata1);
+    cout << "HELLO " << endl;
     Image desc = descriptor(lc[0], Point(10, 10));
+    cout << "HELLO 2" << endl;
     BoundingBox bbox(10-4,10+4,10-4,10+4);
-    drawBoundingBox(lc[0], bbox).write("./Output/stata1-descriptor-location.png");
+    cout << "HELLO 3" << endl;
+    Image bounding_box_im = drawBoundingBox(lc[0], bbox);
+    cout << "HELLO 3.5" << endl;
+    bounding_box_im.write("./Output/stata1-descriptor-location.png");
+    cout << "HELLO 4" << endl;
     desc.write("./Output/stata1-descriptor-test.png");
 }
 
@@ -189,10 +195,10 @@ int main() {
     srand(0); // Fixed seed for deterministic results
 
     //testComputeTensor();
-    // testCornerResponse();
-    // testHarrisCorners();
+    //testCornerResponse();
+    //testHarrisCorners();
     // testDescriptor();
-    // testComputeFeatures();
+    testComputeFeatures();
     // testFindCorrespondences();
     // testRANSAC();
     // testVisualizeCorrespondenceInliers();

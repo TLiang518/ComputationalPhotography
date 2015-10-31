@@ -225,24 +225,14 @@ Image drawBoundingBox(const Image &im, BoundingBox bbox) {
     Image output = im;
     std::cout << "x1 is: " << bbox.x1 << " x2: " << bbox.x2 << " y1: " << bbox.y1 << " y2: " << bbox.y2 << endl;
     for (int i = bbox.x1; i < bbox.x2; i++){
-        output(i,bbox.y1,0) = 0;
-        output(i,bbox.y1,1) = 1;
-        output(i,bbox.y1,2) = 0;  
-
-        output(i,bbox.y2,0) = 0;
-        output(i,bbox.y2,1) = 1;
-        output(i,bbox.y2,2) = 0;  
+        output(i,bbox.y1) = 1;
+        output(i,bbox.y2) = 1;
     }
 
 
     for (int j = bbox.y1; j < bbox.y2; j++){
-        output(bbox.x1,j,0) = 0;
-        output(bbox.x1,j,1) = 1;
-        output(bbox.x1,j,2) = 0;  
-
-        output(bbox.x2,j,0) = 0;
-        output(bbox.x2,j,1) = 1;
-        output(bbox.x2,j,2) = 0;   
+        output(bbox.x1,j) = 1;
+        output(bbox.x2,j) = 1;
     }
 
     return output;
