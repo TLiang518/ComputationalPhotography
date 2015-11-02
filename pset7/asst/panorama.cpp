@@ -92,16 +92,11 @@ Image descriptor(const Image &blurredIm, Point p, float radiusDescriptor) {
     // Extract a descriptor from blurredIm around point p, with a radius 'radiusDescriptor'.
 
     Image output(radiusDescriptor*2+1, radiusDescriptor*2+1, 1);
-    cout << "output width and height: (" << output.width() << " , " << output.height() << ")" << endl;  
     for (int i = p.x - radiusDescriptor; i < p.x + radiusDescriptor + 1; i++){
         for (int j = p.y - radiusDescriptor; j < p.y + radiusDescriptor + 1; j++){
-            cout << "output index: (" << i - (p.x - radiusDescriptor) << " , "<< j - (p.y - radiusDescriptor) << ")" << endl;
             output(i - (p.x - radiusDescriptor), j - (p.y - radiusDescriptor)) = blurredIm(i, j);
         }
     }
-
-    cout << "HELLO AGAIN" << endl;
-
     //subtracting the mean
     Image subtracted_output = output;
     for (int i = 0; i < output.width(); i++){
@@ -109,18 +104,12 @@ Image descriptor(const Image &blurredIm, Point p, float radiusDescriptor) {
             subtracted_output(i,j) = output(i, j) - output.mean();
         }
     }
-
-    cout << "THIS IS" << endl;
-
     Image final_output = subtracted_output;
     for (int i = 0; i < subtracted_output.width(); i++){
         for (int j = 0; j < subtracted_output.height(); j++){
             final_output(i,j) = subtracted_output(i,j)/pow(subtracted_output.var(), 0.5);
         }
     }
-
-    cout << "DOGE SPEAKING" << endl;
-
     return final_output;
 }
 
@@ -131,7 +120,6 @@ vector <Feature> computeFeatures(const Image &im, vector<Point> cornersL,
     // Pset07. obtain corner features from a list of corner points
     
     vector <Feature> features;
-
     vector<Image> lumi_chromi = lumiChromi(im);
     Image lumi = lumi_chromi[0];
     //Using a Gaussian with standard deviation sigmaG, blur the luminance
@@ -153,7 +141,15 @@ vector <Feature> computeFeatures(const Image &im, vector<Point> cornersL,
 float l2Features(Feature &f1, Feature &f2) {
     // // --------- HANDOUT  PS07 ------------------------------
     // Compute the squared Euclidean distance between the descriptors of f1, f2.
-    return 0.0f;
+    float dist = 0;
+
+    for (int i = 0; i < f1.desc().width(); i++){
+        for (int j = 0; j < f1.desc().height(); j++){
+            dist += pow(f1.desc()(i,j) - f2.desc()(i,j), 2);
+        }
+    }
+
+    return dist;
 }
 
 
@@ -161,7 +157,46 @@ vector <FeatureCorrespondence> findCorrespondences(vector<Feature> listFeatures1
     // // --------- HANDOUT  PS07 ------------------------------
     // Find correspondences between listFeatures1 and listFeatures2 using the
     // second-best test.
-    return vector<FeatureCorrespondence>();
+
+    vector <FeatureCorrespondence> correspondences;
+    float threshold_squared = pow(threshold, 2);
+    for (Feature f1: listFeatures1){
+        float best_dif = 5000000;
+        Feature best_feature = f1;
+        
+        float second_best_dif = 50000;
+        Feature second_best_feature = f1;
+
+        bool was_set = false;
+
+        for (Feature f2: listFeatures2){
+            float dif = l2Features(f1, f2);
+            //cout << "Examining best dif: " << best_dif << " and dif: " << dif << " where best_dif < best is: " << best_dif < best << " and " << endl; 
+            //std::cout << best_dif/dif << " and threshold_squared is: " << threshold_squared << endl;
+            if (dif < best_dif){
+                //cout << "made it into first level" << endl;
+                //cout << "Examining best dif: " << best_dif << " and second best dif: " << second_best_dif << " where second_best_dif/best_dif is: " << second_best_dif/best_dif << endl;                 
+                was_set = true;
+
+                second_best_dif = best_dif;
+                second_best_feature = best_feature;
+                
+                best_dif = dif;
+                best_feature = f2;
+                //cout << "updating best feature" << endl;
+            }
+            else if (dif < second_best_dif) {
+                second_best_dif = dif;
+                second_best_feature = f2;                
+            
+            }
+        }
+        if (second_best_dif/best_dif >= threshold_squared && was_set == true) {
+            correspondences.push_back(FeatureCorrespondence(f1, best_feature));
+        }
+    }
+
+    return correspondences;
 }
 
 
@@ -170,13 +205,57 @@ vector<bool> inliers(Matrix H, vector <FeatureCorrespondence> listOfCorresponden
     // Pset07: Implement as part of RANSAC
     // return a vector of bools the same size as listOfCorrespondences indicating
     //  whether each correspondance is an inlier according to the homography H and threshold epsilon
-    return vector<bool>();
+
+    vector<bool> output;
+
+    for (FeatureCorrespondence feature_corr: listOfCorrespondences){
+        CorrespondencePair feature_corr_pair = feature_corr.toCorrespondencePair();
+        Vec3f transformed_first_point = H*feature_corr_pair.point1;
+        Vec3f diff = transformed_first_point - feature_corr_pair.point2;
+        float mag = diff.norm();
+        output.push_back(mag < epsilon);
+    }
+
+    return output;
 }
 
 Matrix RANSAC(vector <FeatureCorrespondence> listOfCorrespondences, int Niter, float epsilon) {
     // // --------- HANDOUT  PS07 ------------------------------
     // Put together the RANSAC algorithm.
-    return Matrix(3,3);
+
+    Matrix best_H = Matrix::Identity(3,3);
+    int max_inliers = 0;
+
+    for (int ransac_iter = 0; ransac_iter < Niter; ransac_iter++){
+        
+        vector<FeatureCorrespondence> random_corrs = sampleFeatureCorrespondences(listOfCorrespondences);
+        vector<FeatureCorrespondence> listOfFeatureCorrespondences = {random_corrs[0], random_corrs[1], random_corrs[2], random_corrs[3]};
+        vector<CorrespondencePair> listOfCorrespondencePairs = getListOfPairs(listOfFeatureCorrespondences);
+        CorrespondencePair arrayOfCorrespondencePairs [4] = {listOfCorrespondencePairs[0], listOfCorrespondencePairs[1], listOfCorrespondencePairs[2], listOfCorrespondencePairs[3]};
+        Matrix H = computeHomography(arrayOfCorrespondencePairs);
+        
+        //singular linear system
+        if (H.determinant() == 0){
+            H = Matrix::Identity(3,3);
+        }
+
+        vector<bool> inlier_vector = inliers(H, listOfFeatureCorrespondences, epsilon);
+        int inlier_count = 0;
+
+        for (bool inlier_bool : inlier_vector){
+            if (inlier_bool){
+                inlier_count += 1;
+            }
+        }
+
+        if (inlier_count >= max_inliers) {
+            max_inliers = inlier_count;
+            best_H = H;
+        }
+
+    }
+
+    return best_H;
 }
 
 
@@ -184,7 +263,23 @@ Image autostitch(Image &im1, Image &im2, float blurDescriptor, float radiusDescr
     // // --------- HANDOUT  PS07 ------------------------------
     // Now you have all the ingredients to make great panoramas without using a
     // primitive javascript UI !
-    return Image(1,1,1);
+    vector<Point> corners_1 = HarrisCorners(im1);
+    vector<Point> corners_2 = HarrisCorners(im2);
+    vector<Feature> features_1 = computeFeatures(im1, corners_1, blurDescriptor, radiusDescriptor);
+    vector<Feature> features_2 = computeFeatures(im2, corners_2, blurDescriptor, radiusDescriptor);
+    vector <FeatureCorrespondence> listOfFeatureCorrespondences = findCorrespondences(features_1, features_2);
+    Matrix H = RANSAC(listOfFeatureCorrespondences);
+
+    BoundingBox B_1 = computeTransformedBBox(im1.width(), im1.height(), H);
+    BoundingBox B_2 = computeTransformedBBox(im2.width(), im2.height(), Matrix::Identity(3,3));
+    BoundingBox B = bboxUnion(B_1,B_2);
+    Matrix T = makeTranslation(B);
+
+    Image out(B.x2 - B.x1, B.y2 - B.y1, im1.channels());    
+    applyHomographyFast(im2, T, out, true);
+    applyHomographyFast(im1, T*H, out, true);
+
+    return out;
 }
 
 

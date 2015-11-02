@@ -192,10 +192,10 @@ Image stitch(const Image &im1, const Image &im2, const CorrespondencePair corres
     Image out(B.x2 - B.x1, B.y2 - B.y1, im1.channels());    
     std::cout << "HELO HUNAM 1" << endl;
 
-    applyHomography(im2, T, out, true);
+    applyHomographyFast(im2, T, out, true);
     std::cout << "HELO HUNAM 4" << endl;
 
-    applyHomography(im1, T*H, out, true);
+    applyHomographyFast(im1, T*H, out, true);
     std::cout << "HELO HUNAM 2" << endl;
 
     return out;

@@ -198,11 +198,11 @@ int main() {
     //testCornerResponse();
     //testHarrisCorners();
     // testDescriptor();
-    testComputeFeatures();
+    // testComputeFeatures();
     // testFindCorrespondences();
     // testRANSAC();
     // testVisualizeCorrespondenceInliers();
     // testAutoStitch();
-    // testAutoStitchBoston();
+    testAutoStitchBoston();
 }
 
