@@ -304,13 +304,13 @@ int main() {
     //testApplyHomographyBlend();
     
     testTwoScaleBlendStata();
-    //testStitchBlendStata();
-    //testAutoStitchBlendStata();
-    //testAutoStitchBlendBoston();
-    //testAutoStitchBlendCastle();
+    testStitchBlendStata();
+    testAutoStitchBlendStata();
+    testAutoStitchBlendBoston();
+    testAutoStitchBlendCastle();
     
     //testPano2Planet();
-    // testAutoStitchNBoston();
+    //testAutoStitchNBoston();
     // testAutoStitchNCastle();
     
 }

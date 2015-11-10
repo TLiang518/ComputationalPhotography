@@ -529,11 +529,8 @@ Image autostitchN(vector<Image> ims, int refIndex, float blurDescriptor, float r
     Image ref_image_ones(ref_image.width(), ref_image.height(), ref_image.channels());
     ref_image_ones = 1 - ref_image_ones;
 
-    //for out_weight
-    Image out_weight_base(B.x2 - B.x1, B.y2 - B.y1, 1);
-    applyhomographyBlend(ref_image_ones, ref_image_weight, out_weight_base, T, true);
-
     Image out(B.x2 - B.x1, B.y2 - B.y1, ref_image.channels());    
+    Image out_weight(B.x2 - B.x1, B.y2 - B.y1, 1);
 
     cout << "Made it past autostitchNN setup" << endl;
 
@@ -542,41 +539,36 @@ Image autostitchN(vector<Image> ims, int refIndex, float blurDescriptor, float r
         Image current_image_weight = blendingweight(current_image.width(), current_image.height());
         Matrix H = stackedHomographies[i];
         Matrix TH = T*H;
-        Image stiched_linear_blending = stitchLinearBlending(current_image, ref_image, current_image_weight, ref_image_weight, TH);
+        out = stitchLinearBlending(current_image, ref_image, current_image_weight, ref_image_weight, TH);
 
+        //making the weighting image
         Image current_image_ones(current_image.width(), current_image.height(), current_image.channels());
         current_image_ones = 1 - current_image_ones;
-
-        //Start with the blended weight of the base image        
-        Image current_out_weight = out_weight_base;
-        applyhomographyBlend(current_image_ones, current_image_weight, current_out_weight, TH, true);
-
-        Image out_weight_factor = current_out_weight;
-        for (int i = 0; i < current_out_weight.width(); i++){
-            for (int j = 0; j < current_out_weight.height(); j++){
-                for (int c = 0; c < current_out_weight.channels(); c++){
-                    if (current_out_weight(i,j,c) == 0) {
-                        out_weight_factor(i,j,c) = 1;
-                    }
-                    else {
-                        out_weight_factor(i,j,c) = 1.0/out_weight_factor(i,j,c);
-                    }
-                }
-            }
-        }
-
-        out = stiched_linear_blending;
-        
-        for (int i = 0; i < stiched_linear_blending.width(); i++){
-            for (int j = 0; j < stiched_linear_blending.height(); j++){
-                for (int c = 0; c < stiched_linear_blending.channels(); c++){
-                    out(i,j,c) = stiched_linear_blending(i,j,c)*out_weight_factor(i,j);
-                }
-            }
-        }
-        
+        applyhomographyBlend(current_image_ones, current_image_weight, out_weight, TH, true);
     }
 
+    Image out_weight_factor = out_weight;
+    for (int i = 0; i < out_weight.width(); i++){
+        for (int j = 0; j < out_weight.height(); j++){
+            for (int c = 0; c < out_weight.channels(); c++){
+                if (out_weight(i,j,c) == 0) {
+                    out_weight_factor(i,j,c) = 1;
+                }
+                else {
+                    out_weight_factor(i,j,c) = 1.0/out_weight(i,j,c);
+                }
+            }
+        }
+    }
+         
+    for (int i = 0; i < out.width(); i++){
+        for (int j = 0; j < out.height(); j++){
+            for (int c = 0; c < out.channels(); c++){
+                out(i,j,c) = out(i,j,c)*out_weight_factor(i,j);
+            }
+        }
+    }
+       
     return out;
 
 }
