@@ -292,16 +292,18 @@ int main() {
     */
     // Part 2/2 tests
     
-    testBlendingWeight();
+    //testBlendingWeight();
+
+    //testApplyHomographyBlend();
     /*
-    testApplyHomographyBlend();
     testStitchBlendStata();
     testAutoStitchBlendStata();
     testAutoStitchBlendBoston();
     testAutoStitchBlendCastle();
-    testPano2Planet();
-    testAutoStitchNBoston();
-    testAutoStitchNCastle();
     */
+    //testPano2Planet();
+    testAutoStitchNBoston();
+    // testAutoStitchNCastle();
+    
 }
 
