@@ -224,6 +224,13 @@ void testAutoStitchBlendStata() { // stata
     autostitch(stata1, stata2, 1).write("./Output/Stata-autostitch-linearblending.png");
     autostitch(stata1, stata2, 2).write("./Output/Stata-autostitch-2scaleblending.png");
 }
+
+void testTwoScaleBlendStata(){
+    Image stata1("./Input/stata-1.png");
+    Image stata2("./Input/stata-2.png");
+    autostitch(stata1, stata2, 2).write("./Output/2stageblendingstata.png");
+}
+
 void testAutoStitchBlendBoston() { // boston
     Image boston1("./Input/boston-sunset-1.png");
     Image boston2("./Input/boston-sunset-2.png");
@@ -295,14 +302,15 @@ int main() {
     //testBlendingWeight();
 
     //testApplyHomographyBlend();
-    /*
-    testStitchBlendStata();
-    testAutoStitchBlendStata();
-    testAutoStitchBlendBoston();
-    testAutoStitchBlendCastle();
-    */
+    
+    testTwoScaleBlendStata();
+    //testStitchBlendStata();
+    //testAutoStitchBlendStata();
+    //testAutoStitchBlendBoston();
+    //testAutoStitchBlendCastle();
+    
     //testPano2Planet();
-    testAutoStitchNBoston();
+    // testAutoStitchNBoston();
     // testAutoStitchNCastle();
     
 }

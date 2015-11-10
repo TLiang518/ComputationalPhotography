@@ -73,6 +73,9 @@ void applyHomographyMax(const Image &source, const Image &weight, const Image &o
     // // --------- HANDOUT  PS07 ------------------------------
 
     Matrix inv_H = H.inverse();
+    
+    out.write("./Output/2stageblendingstata_homographyMaxOut.png");
+
 
     cout << "TODO: WEIRD IMAGE BOUNDS THING " << endl;
 
@@ -105,8 +108,12 @@ void applyHomographyMax(const Image &source, const Image &weight, const Image &o
                         pixel_value = source(round(new_x), round(new_y), c);
                     }
 
-                    if (weight(new_x,new_y) > outweight(new_x, new_y)){
+                    if (weight(a,b) > outweight(a,b)){
+                        cout << "In positive case!" << endl;
                         out(a, b, c) = pixel_value;
+                    }
+                    else {
+                        cout << "in negative case, weight was: " << weight(new_x,new_y) << " and outweight was: " << outweight(new_x, new_y) << endl;
                     }
 
                 }
@@ -229,6 +236,8 @@ Image stitchBlending(Image &im1, Image &im2, Matrix H, int blend) {
         //First, decompose each source image into 
         //low frequencies and high frequencies using 
         //a Gaussian blur. Use a spatial sigma of 2 pixels.
+
+        cout << "IN TWO STAGE BLENDING" << endl;
         
         Image we1 = blendingweight(im1.width(), im1.height());
         Image we2 = blendingweight(im2.width(), im2.height());
@@ -239,7 +248,9 @@ Image stitchBlending(Image &im1, Image &im2, Matrix H, int blend) {
         Image im2_lowfreq = gaussianBlur_separable(im2, spacial_sigma);
 
         Image im1_highfreq = im1 - im1_lowfreq;
+        im1_highfreq.write("./Output/2stageblendingstata_im1highfreq.png");
         Image im2_highfreq = im2 - im2_lowfreq;
+        im2_highfreq.write("./Output/2stageblendingstata_im2highfreq.png");
 
         // For the low frequencies, use the same transition as above.
 
@@ -254,11 +265,21 @@ Image stitchBlending(Image &im1, Image &im2, Matrix H, int blend) {
         Matrix T = makeTranslation(B);
         Matrix TH = T*H;
 
-        Image high_freq_blended_image(B.x2 - B.x1, B.y2 - B.y1, im1.channels());    
-        applyHomographyFast(im2_highfreq, T, high_freq_blended_image, true);
-        //applyHomographyMax(im1_highfreq, we1, we2, high_freq_blended_image, TH, true);
+        //Constructing the weighted imge needed for applyHomographyMax
+        Image im2_highfreq_ones(im2_highfreq.width(), im2_highfreq.height(), im2_highfreq.channels());
+        im2_highfreq_ones = 1 - im2_highfreq_ones;
+        Image im2_highfreq_weighted_img(B.x2 - B.x1, B.y2 - B.y1, im2.channels());    
+        applyHomographyFast(im2_highfreq_ones, T, im2_highfreq_weighted_img, true);
 
-        //applyhomographyMax(im1_highfreq, T*H, high_freq_blended_image, true);
+        Image im1_highfreq_ones(im1_highfreq.width(), im1_highfreq.height(), im1_highfreq.channels());
+        im1_highfreq_ones = 1 - im1_highfreq_ones;
+        Image im1_highfreq_weighted_img(B.x2 - B.x1, B.y2 - B.y1, im2.channels());    
+        applyHomographyFast(im1_highfreq_ones, TH, im1_highfreq_weighted_img, true);
+
+
+        Image high_freq_blended_image(B.x2 - B.x1, B.y2 - B.y1, im1.channels());            
+        applyHomographyFast(im2_highfreq, T, high_freq_blended_image, true);
+        applyHomographyMax(im1_highfreq, im1_highfreq_weighted_img, im2_highfreq_weighted_img, high_freq_blended_image, TH, true);
 
         //Compute the final image by adding the resulting low and high fre-quencies.
         Image out = low_freq_blended_image + high_freq_blended_image;
