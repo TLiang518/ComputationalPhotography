@@ -535,7 +535,7 @@ vector<Matrix> sequenceHs(vector<Image> ims, float blurDescriptor, float radiusD
     for (int i = 0; i < ims.size() - 1; i++){
 
         Image im1 = ims[i];
-        Image im2 = ims[i];            
+        Image im2 = ims[i+1];            
 
         vector<Point> corners_1 = HarrisCorners(im1);
         vector<Point> corners_2 = HarrisCorners(im2);
@@ -547,6 +547,10 @@ vector<Matrix> sequenceHs(vector<Image> ims, float blurDescriptor, float radiusD
 
         Matrix H = RANSAC(listOfFeatureCorrespondences);
         Hs.push_back(H);
+    }
+
+    for (Matrix matrix : Hs){
+        cout << matrix << endl;
     }
     
     return Hs;
@@ -570,9 +574,9 @@ vector <Matrix> stackHomographies(vector <Matrix> Hs, int refIndex) {
 
     for (int i = 0; i < refIndex; i++){
         Matrix H = Matrix::Identity(3, 3);
-        for (int j = i; j < refIndex; j++){
+        for (int j = i; j >= 0; j--){
             cout << "In multiplication step of stack homographies" << endl;
-            H = H*Hs[j];
+            H = Hs[j]*H;
         }
         stackedHomographies.push_back(H);
     }
@@ -586,11 +590,16 @@ vector <Matrix> stackHomographies(vector <Matrix> Hs, int refIndex) {
         Matrix H = Matrix::Identity(3, 3);
         cout << "i is: " << i << " and refIndex is: " << refIndex << endl;
         cout << "j should be counting down from i to refIndex" << endl;
-        for (int j = i; j >= refIndex; j--){
+        for (int j = i; j < Hs.size(); j++){
             cout << "j is: " << j << endl;
-            H = Hs[j]*H;
+            H = H*Hs[j];
         }
         stackedHomographies.push_back(H);
+    }
+
+    cout << "Stacked homographies" << endl;
+    for (Matrix matrix : stackedHomographies){
+        cout << matrix << endl;
     }
 
     cout << "length of stackedHomographies is: " << stackedHomographies.size() << " should be: " << Hs.size() + 1 << endl;
@@ -629,23 +638,11 @@ Image autostitchN(vector<Image> ims, int refIndex, float blurDescriptor, float r
     Use linear blending.
     */
 
-    cout << "Beginning of autostitchNN" << endl;
-
-    cout << "Length of ims is: " << ims.size() << endl;
-
     vector<Matrix> sequencedHs = sequenceHs(ims, blurDescriptor, radiusDescriptor);
 
-    cout << "After sequencedHs" << endl;
-
-    cout << "Length of sequencedHs is: " << sequencedHs.size() << " should be:  " << ims.size() - 1 << endl;
-
     vector<Matrix> stackedHomographies = stackHomographies(sequencedHs, refIndex);
-    
-    cout << "After stackedHomographies" << endl;
 
     BoundingBox B = bboxN(stackedHomographies, ims);
-
-    cout << "After B" << endl;
 
     Matrix T = makeTranslation(B);
 
@@ -675,6 +672,8 @@ Image autostitchN(vector<Image> ims, int refIndex, float blurDescriptor, float r
         current_image_ones = 1 - current_image_ones;
         applyhomographyBlend(current_image_ones, current_image_weight, out_weight, TH, true);
     }
+
+    out.write("./Output/NNout.png");
 
     Image out_weight_factor = out_weight;
     for (int i = 0; i < out_weight.width(); i++){

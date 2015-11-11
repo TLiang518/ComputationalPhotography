@@ -268,8 +268,10 @@ void testAutoStitchNBoston() {
     vector<Image> ims;
     ims.push_back(Image("./Input/boston-sunset-1.png"));
     ims.push_back(Image("./Input/boston-sunset-2.png"));
-    ims.push_back(Image("./Input/boston-sunset-3.png"));
-    autostitchN(ims, 1).write("./Output/boston-autostitchN.png");
+    //ims.push_back(Image("./Input/boston-sunset-3.png"));
+    //autostitch(ims[0], ims[1], 1).write("./Output/Test-Boston-autostitch-linearblending.png");
+    //autostitch(ims[0], ims[1], 2).write("./Output/Test-Boston-autostitch-2scaleblending.png");    
+    autostitchN(ims, 1).write("./Output/Test-boston-autostitchN.png");
 }
 
 // 6.865 - N stitch - Castle
@@ -318,9 +320,9 @@ int main() {
     testAutoStitchBlendCastle();
     */
     // testCoordinateConversion();
-    testPano2Planet();
-    //testAutoStitchNBoston();
-    // testAutoStitchNCastle();
+    //testPano2Planet();
+    testAutoStitchNBoston();
+    //testAutoStitchNCastle();
     
 }
 
