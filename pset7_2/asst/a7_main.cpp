@@ -255,6 +255,14 @@ void testPano2Planet() {
 
 }
 
+void testCoordinateConversion(){
+    int new_im_size = 100;
+    Image im_old(10,10,1);
+    vector<float> test_at_0 = rect_coords_new_to_old(im_old, 50, 50, new_im_size);
+    cout << "Testing rect_coords_new_to_old: zero case, should be (5,5): (" << test_at_0[0] << "," << test_at_0[1] << ")" << endl;
+
+
+}
 // 6.865 - N stitch - Boston
 void testAutoStitchNBoston() {
     vector<Image> ims;
@@ -302,14 +310,15 @@ int main() {
     //testBlendingWeight();
 
     //testApplyHomographyBlend();
-    
+    /*
     testTwoScaleBlendStata();
     testStitchBlendStata();
     testAutoStitchBlendStata();
     testAutoStitchBlendBoston();
     testAutoStitchBlendCastle();
-    
-    //testPano2Planet();
+    */
+    // testCoordinateConversion();
+    testPano2Planet();
     //testAutoStitchNBoston();
     // testAutoStitchNCastle();
     

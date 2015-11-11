@@ -35,6 +35,7 @@ Image stitchBlending(Image &im1, Image &im2, Matrix H, int blend);
 Image autostitch(Image &im1, Image &im2, int blend, float blurDescriptor=0.5, float radiusDescriptor=4);
 
 // mini planets
+vector<float> rect_coords_new_to_old(Image old_image, float input_x, float input_y, int newImSize);
 Image pano2planet(const Image &pano, int newImSize, bool clamp=true);
 
 // stitch N images

@@ -310,22 +310,48 @@ Image autostitch(Image &im1, Image &im2, int blend, float blurDescriptor, float 
 /************************************************************************
  * Tricks: mini planets.
  ************************************************************************/
+/*
+Implement Image pano2planet(const Image &pano,
+int newImSize, bool clamp=true). Make a new image of square size (newImSize), 
+and for each pixel (x, y) in the new image, compute the polar coordinates (angle, radius) 
+assuming that the center is the floating point center as in blendingweights. 
 
-vector<float> rect_coords_new_to_old_2(Image old_image, float input_x, float input_y, int newImSize){
+Map the bottom of your input panorama to the center of the the new image and
+the top to a radius corresponding to the distance between the center and the
+right edge (in the square output).
+
+The left and right sides of the input panorama should be mapped to
+an angle of 0, along the right horizontal axis in the new image with
+increasing (counter-clockwise) angle in the output corresponding to
+sweeping from left to right of the input panorama. 
+
+Assume standard
+polar coordinate conventions (angle is 0 along right horizontal axis
+and ⇡ is along the top vertical axis). Use interpolateLin to copy 2
+pixels from panorama to planet image. Hint: see C++’s atan2.
+
+*/
+
+
+
+vector<float> rect_coords_new_to_old(Image old_image, float input_x, float input_y, int newImSize){
     vector <float> radius_and_angle;
 
     float new_radius = pow((input_x - newImSize/2)*(input_x - newImSize/2) + (input_y - newImSize/2)*(input_y - newImSize/2), .5);
     float new_angle = atan2((input_y - newImSize/2),fabs(input_x - newImSize/2));
     float signed_new_angle = (input_x - newImSize/2) > 0 ? new_angle : -1*new_angle;
 
-    float old_image_radius = pow(old_image.width()*old_image.width() + old_image.height()*old_image.height(),.5);
+    float old_image_radius = pow(old_image.width()*old_image.width()/4 + old_image.height()*old_image.height()/4,.5);
     float new_img_radius = pow(2*(newImSize/2)*(newImSize/2), .5);
+
+    cout << "old_image_radius: " << old_image_radius << endl;
+    cout << "new_image_radius: " << new_img_radius << endl;
 
     float radius = new_radius*old_image_radius/new_img_radius;
     float angle = signed_new_angle;
 
-    float old_x = radius*cos(angle);
-    float old_y = radius*sin(angle);
+    float old_x = radius*cos(angle) + old_image_radius;
+    float old_y = radius*sin(angle) + old_image_radius;
 
     radius_and_angle.push_back(old_x);
     radius_and_angle.push_back(old_y);
@@ -333,8 +359,111 @@ vector<float> rect_coords_new_to_old_2(Image old_image, float input_x, float inp
     return radius_and_angle;
 }
 
-
 Image pano2planet(const Image &pano, int newImSize, bool clamp) {
+    // // --------- HANDOUT  PS07 ------------------------------
+    /*
+    Implement Image pano2planet(const Image &pano,
+    int newImSize, bool clamp=true). Make a new image of square size (newImSize), 
+    and for each pixel (x, y) in the new image, compute the polar coordinates (angle, radius) 
+    assuming that the center is the floating point center as in blendingweights. 
+
+    Map the bottom of your input panorama to the center of the the new image and
+    the top to a radius corresponding to the distance between the center and the
+    right edge (in the square output).
+
+    The left and right sides of the input panorama should be mapped to
+    an angle of 0, along the right horizontal axis in the new image with
+    increasing (counter-clockwise) angle in the output corresponding to
+    sweeping from left to right of the input panorama. 
+
+    Assume standard
+    polar coordinate conventions (angle is 0 along right horizontal axis
+    and ⇡ is along the top vertical axis). Use interpolateLin to copy 2
+    pixels from panorama to planet image. Hint: see C++’s atan2.
+
+    */
+
+    Image new_img(newImSize, newImSize, pano.channels());
+    Image polar_coords_im = new_img;
+    for (int i = 0; i < new_img.width(); i++){
+        for (int j = 0; j < new_img.height(); j++){
+            float x_from_center = i - new_img.width()/2;
+            float y_from_center = j - new_img.height()/2;
+            
+            float radius = pow(x_from_center*x_from_center + y_from_center*y_from_center, .5);
+            polar_coords_im(i,j,0) = radius;
+
+            float angle = atan2(y_from_center, x_from_center);
+            polar_coords_im(i,j,1) = angle;
+        }
+    }
+
+    /*
+    Map the bottom of your input panorama to the center of 
+    the the new image and the top to a radius corresponding
+    to the distance between the center and the right edge (in the square output).
+
+    --> as you go bottom to top, radius increases...
+
+    The left and right sides of the input panorama should be mapped to
+    an angle of 0, along the right horizontal axis in the new image with
+    increasing (counter-clockwise) angle in the output corresponding to
+    sweeping from left to right of the input panorama. 
+
+    -> as you move left to right, angle increases...
+    
+    Idea:
+    Iterate through polar coords of new image.
+    For each (radius, angle), convert to x y coords for the initial image
+    How?
+    For radius --> center and right edge, make it a ratio, so...
+        - start with new image thing, get radius,
+        - multiply by height of  old image/2, divide by right edge of square output (newImsize/2)
+        - that's our y coord
+
+    For angle --> The left and right sides of the input panorama should be mapped to
+    an angle of 0
+        - start with new image, get angle
+        - divide angle by 2pi (need to check if it's negative? and if so add 2pi)
+        - multiply by width = sweeping from left to right
+        - use that as index.
+    */
+
+    for (int i = 0; i < polar_coords_im.width(); i++){
+        for (int j = 0; j < polar_coords_im.height(); j++){
+            float radius = polar_coords_im(i,j,0);
+            float mapped_radius = pano.height() - 2*radius*pano.height()/polar_coords_im.height();
+            float angle = polar_coords_im(i,j,1);
+            if (angle < 0){
+                angle = angle + 2*M_PI;
+            }
+            float mapped_angle = pano.width() - angle/(2*M_PI)*pano.width();
+            
+            if (i == polar_coords_im.width()/2 && j == polar_coords_im.height()/2){
+                cout << "At center of polar coords image. x is: " << mapped_angle << " y is: " << mapped_radius << " and the original width/height is: (" << pano.width() << " , " << pano.height() << ")" << endl;
+            }
+
+            if (i == polar_coords_im.width() - 1 && j == polar_coords_im.height()/2){
+                cout << "At right center of polar coords image. Should be top of pano. x pano is: " << mapped_angle << " y is: " << mapped_radius << " and the original width/height is: (" << pano.width() << " , " << pano.height() << ")" << endl;
+            }
+
+            if (i == polar_coords_im.width() - 1 && j == polar_coords_im.height()/2){
+                cout << "At right center of polar coords image. Should be top of pano. x pano is: " << mapped_angle << " y is: " << mapped_radius << " and the original width/height is: (" << pano.width() << " , " << pano.height() << ")" << endl;
+            }
+
+            for (int c = 0; c < new_img.channels(); c++){
+                float pixel_value = interpolateLin(pano, mapped_angle, mapped_radius, c, true);
+                new_img(i,j,c) = pixel_value;   
+            }
+        }
+    }
+
+    return new_img;
+}
+
+
+
+Image pano2planet2(const Image &pano, int newImSize, bool clamp) {
     // // --------- HANDOUT  PS07 ------------------------------
     
     /*
@@ -373,7 +502,7 @@ Image pano2planet(const Image &pano, int newImSize, bool clamp) {
     for (int i = 0; i < new_img.width(); i++){
         for (int j = 0; j < new_img.height(); j++){
             for (int c = 0; c < new_img.channels(); c++){
-                vector<float> new_x_new_y = rect_coords_new_to_old_2(pano, i, j, newImSize);
+                vector<float> new_x_new_y = rect_coords_new_to_old(pano, i, j, newImSize);
                 float new_x = new_x_new_y[0];
                 float new_y = new_x_new_y[1];
                 if (new_x >= 0 && new_y >= 0 && new_x < pano.width() - 1 && new_y < pano.height() - 1){
