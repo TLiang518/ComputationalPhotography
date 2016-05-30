@@ -188,11 +188,11 @@ void testOrientedPaint_CrossStitchEdgeAlignment(){
 
 
 void testOrientedPaint(){
-	Image im("Input/sunset.png");
+	Image im("Input/doge.png");
 	Image texture("Input/brush.png");
 
 	Image out = orientedPaint(im, texture, 40000, 40, .1, true);
-	out.write("Output/testOrientedPaint_sunset_OriginalStitch.png");
+	out.write("Output/testOrientedPaint_doge_OriginalStitch.png");
 	
 	//out = orientedPaint(im, texture, 40000, 40, .1, false);
 	//out.write("Output/testOrientedPaint_stanford_CrossStitch.png");
